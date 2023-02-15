@@ -20,6 +20,8 @@
 
 在 `React` 中,不能直接赋值修改,必须通过一个方法,叫`setState`
 
+在 `React` 中组件名不仅要开头大写,想class也是className,其中命名也是非常注重规则,这规则一般都是开头字母大写或者驼峰式命名法.
+
 ## 1.0 环境搭建
 
 **window powershell的打开方式**
@@ -1116,6 +1118,16 @@ const { Provider, Consumer } = createContext()
 
 
 
+createContext默认优先是 Provider vaule = { 传递的参数 } ,但是如果没有设置Provider ,那么会在去找createcontext创建的时候传过来的参数.然而这个默认餐宿可以传输一个类的实例对象.
+
+```raact
+const context = React.createContext(rootstore)
+```
+
+
+
+
+
 ## 7.0 组件扩充
 
 ### children
@@ -1257,7 +1269,7 @@ Test.defualtProps = {
 
 
 
-## 组件生命周期
+##  8.0 组件生命周期 [需要日后复习扩充]
 
 组件的生命周期是指组件从被创建到挂载到页面中运行起来，再到组件不用时卸载的过程，注意，只有类组件才有生命周期（类组件-->实例化, 函数组件-->不需要实例化）
 
@@ -1317,6 +1329,326 @@ state中尽量保持精简原则:
 | 钩子函数             | 触发时机                 | 作用                               |
 | -------------------- | ------------------------ | ---------------------------------- |
 | componentWillUnmount | 组件卸载（从页面中消失） | 执行清理工作（比如：清理定时器等） |
+
+
+
+
+
+## 9.0 Hooks
+
+### 9.1 useState（）
+
+useState() 介绍 , 从react中导入 usetate 后就可以使用.
+
+它只能够出现在函数组件中,并且不能将它嵌套在 if / for 等其他域中使用它,它被使用的唯一地方应该是函数组件里面最外层的作用域中.
+
+不在 if / for中使用,是因为它依赖hook执行的顺序,如果在 if / for 中使用它,会将顺序打乱.
+
+```react
+import {useState} from 'react'
+```
+
+
+
+通过解构赋值,可以获得一个状态和一个修改这个状态的方法. 其中解构赋值的时候名字可以自定义,但是它们两个的位置不能改变.前者应该是状态,后者就说修改这个状态的方法.
+
+可以给useState的 ( ) 中赋值一个初始值,但是这个初始值只会在首次的时候生效。
+
+```react
+const [count, setcount] = useState(0)
+const [flag, setFlag] = useState(flag)
+const [list, setList] = useState([])
+```
+
+
+
+然后可以通过函数使用修改状态的方法,改变这个状态值.每用该方法改变一次,状态自动转变最新的值.
+
+```react
+onClick={() => setcount(count + 1)}
+```
+
+
+
+### 9.2 useEffect()
+
+用于函数组件的副作用[^T].
+
+- 无依赖项
+- 有依赖项
+  - 添加空数组,首次渲染执行一次.
+- 特定依赖项
+  - 特性的依赖项一旦改变就会执行.
+
+
+
+注意,只要是在useEffect中用到的状态,一定是要写在依赖项中的.
+
+useEffect 都是在组件 Dom 渲染更新完毕之后才执行.
+
+
+
+```react
+import { useState, useEffect } from "react"
+function App () {
+  const [age, setage] = useState(0)
+  const [name, setname] = useState('张三')
+
+  useEffect(() => {
+    // 定义副作用
+    console.log("副作用执行了!")
+  }, [age])
+  return (
+    <dib>
+      <button onClick={() => setname('李四')}>你现在的名字:{name}</button>
+      <button onClick={() => setage(age + 1)}>你现在的年龄:{age}</button>
+    </dib>)
+}
+export default App
+```
+
+
+
+[T]: 函数除了完成它的主要功能外,还完成了其他的功能,那么多余完成的功能就是这个函数的副作用.
+
+随时获取页面 y 坐标的值.
+
+```react
+import { useState } from "react"
+// 函数组件的名称要大写.
+function UseWindowScroll () {
+  cont[Y, setY] = useState(0)
+  window.addEventListener('sroll', () => {
+    const h = document.documentElement.scrollTop
+    setY(h)
+  })
+  return [Y]
+}
+export default UseWindowScroll
+```
+
+
+
+如果传入一个初始状态值的时候,这个值需要计算才能够获得.
+
+那么需要在useState中写明一个箭头函数的,在函数中计算出状态值.
+
+
+
+```react
+const [name, setName] = useState(()=>{   
+  // 编写计算逻辑    return '计算之后的初始值'
+})
+```
+
+
+
+
+
+### useEffect清理副作用
+
+如果想要清理副作用 可以在副作用函数中的末尾return一个新的函数，在新的函数中编写清理副作用的逻辑
+
+注意执行时机为：
+
+1. 组件卸载时自动执行
+2. 组件更新时，下一个useEffect副作用函数执行之前自动执行
+
+```jsx
+import { useEffect, useState } from "react"
+
+
+const App = () => {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      setCount(count + 1)
+    }, 1000)
+    return () => {
+      // 用来清理副作用的事情
+      clearInterval(timerId)
+    }
+  }, [count])
+  return (
+    <div>
+      {count}
+    </div>
+  )
+}
+
+export default App
+```
+
+
+
+### 9.3 useEffect发送网络请求
+
+不可以直接在useEffect的回调函数外层直接包裹 await ，因为**异步会导致清理函数无法立即返回**
+
+```react
+import { useState, useEffect } from "react"
+function App () {
+  useEffect(() => {
+    function loadData () {
+      const res = fetch('http://geek.itheima.net/v1_0/channels')
+        .then(response => response.json)
+        .then(data => console.log(data))
+      console.log(res)
+    }
+    loadData()
+  }, [])
+  return (
+    <div>
+    </div>
+  )
+}
+export default App
+```
+
+
+
+### 9.4 useRef
+
+组件实例 : 指类组件,函数组件没有组件实例.
+
+dom对象 :  标签
+
+分别创建一个类组件和一个标签，并且在这两者中都标记上` ref  `
+
+```react
+      <Test ref={testRef}></Test>
+      <h1 ref={h1Ref}>this is h1</h1>
+```
+
+那么关于这两者的信息,就会自动记录在useRef中的一个`  .current ` 中.
+
+这个时候我们打印出这个` .current ` , 如果是类组件就会得到类组件相关的信息,如果是标签就会得到这个dom节点.
+
+```react
+import React, { useEffect, useRef } from 'react'
+class Test extends React.Component {
+  render () {
+    return (
+      <div>我是类组件</div>
+    )
+  }
+}
+
+function App () {
+  const testRef = useRef(null)
+  const h1Ref = useRef(null)
+  useEffect(() => {
+    console.log(testRef.current)
+    console.log(h1Ref.current)
+  }, [])
+
+  return (
+    <div>
+      <Test ref={testRef}></Test>
+      <h1 ref={h1Ref}>this is h1</h1>
+    </div>
+  )
+}
+export default App
+```
+
+
+
+控制台输出结果如下:
+
+![1676290122275](D:/A_CODEFILES/Z_gitWarehouse/githubWarehouse/study_with_me/React%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/React.assets/1676290122275.png)
+
+
+
+### 9.5 useContext 
+
+使用 useContext 可以直接接受由context.Provider中传输的value值.
+
+```react
+import React, { createContext, useContext, useState } from 'react'
+
+const context = createContext()
+
+function ComA () {
+    /* 和类组件的接受有点不同 */
+  const count = useContext(context)
+  return (
+    <div>
+      我是组件ComA
+      <p>我是从App来的数据:{count}</p>
+    </div>
+  )
+}
+function ComC () {
+  const count = useContext(context)
+  return (
+    <>
+      <div>我是组件ComC</div>
+      <p>我是从App来的数据:{count}</p>
+    </>
+
+  )
+}
+function App () {
+  const [name, setName] = useState('张三')
+  return (
+    <context.Provider value={name}>
+      <div>
+        <ComA />
+        <ComC />
+      </div>
+    </context.Provider>
+  )
+}
+export default App
+```
+
+
+
+并且在使用useState中的修改方法的时候,这个传过去的状态值同样会改变
+
+```react
+const style_btn = {
+  width: '100px',
+  height: '50px',
+  color: '#1bcac6'
+}
+function App () {
+  const [name, setName] = useState('张三')
+  return (
+    <>
+      <context.Provider value={name}>
+        <div>
+          <ComA />
+          <ComC />
+        </div>
+      </context.Provider>
+      <button style={style_btn} onClick={() => {
+        setName(() => {
+          let temp = name
+          temp = temp + "*"
+          return temp
+        })
+      }}>点击在文字后添加星号</button>
+    </>
+  )
+}
+export default App
+```
+
+
+
+Context如果要传递的数据 只需要在整个应用初始化的时候传递一次
+
+就可以就可以选择在index.js文件里做数据提供
+
+![1676293010837](D:/A_CODEFILES/Z_gitWarehouse/githubWarehouse/study_with_me/React%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/React.assets/1676293010837.png)
+
+如果Context需要传递数据并且将来还需要在对数据做修改 底层组件也需要跟着一起变 那就的写到app.js页面,方便改动数据.
+
+
+
+
 
 ## 拓展点
 
@@ -1455,13 +1787,11 @@ console.log(bar)  // ipsum
 
 
 
+### 4. JavaScript中函数可以自调用
 
-
-
-
-
-
-
+```JavaScript
+!function (a, b) { console.log(a + b) }(10, 20)
+```
 
 
 
